@@ -1,0 +1,217 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local PlayerCharacter = game.Players.LocalPlayer.Character
+local NPCFolder = game.Workspace:FindFirstChild("npcs")
+local EggsFolder = game.Workspace:FindFirstChild("interactions"):FindFirstChild("eggs")
+local TPPartsFolder = game.Workspace:FindFirstChild("interactions"):FindFirstChild("teleports")
+
+local NPCTABLE = {"Ice Golem", "Pufferfish King", "Pastel Guardian"}
+for i, v in pairs(NPCFolder:GetChildren()) do
+    if not table.find(NPCTABLE, v.Name) then
+        table.insert(NPCTABLE, v.Name)
+    end
+end
+
+local EggsTable = {}
+for i, v in pairs(EggsFolder:GetChildren()) do
+    if not table.find(EggsTable, v.Name) then
+        table.insert(EggsTable, v.Name)
+    end
+end
+
+local TPTable = {}
+for i, v in pairs(TPPartsFolder:GetChildren()) do
+    if not table.find(TPTable, v.Name) then
+        table.insert(TPTable, v.Name)
+    end
+end
+
+table.sort(NPCTABLE)
+
+local Window = Rayfield:CreateWindow({
+   Name = "Monkey Hub",
+   LoadingTitle = "Monkey Niggers Incorporated",
+   LoadingSubtitle = "by Monkey Squad",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = true,
+      Invite = "KYNYCvEzVK", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+local FightingTab = Window:CreateTab("Fighting")
+local FightingSection = FightingTab:CreateSection("Fighting")
+
+local NPCDropdown = FightingTab:CreateDropdown({
+   Name = "NPC",
+   Options = NPCTABLE,
+   CurrentOption = {"Ice Golem"},
+   MultipleOptions = false,
+   Flag = "Dropdown1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Option)
+   -- The function that takes place when the selected option is changed
+   -- The variable (Option) is a table of strings for the current selected options
+   end,
+})
+
+local MagnitudeSlider = FightingTab:CreateSlider({
+   Name = "Magnitude",
+   Range = {0, 5},
+   Increment = 0.1,
+   Suffix = "Magnitude",
+   CurrentValue = 2,
+   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+   end,
+})
+
+local FightingToggle = FightingTab:CreateToggle({
+   Name = "Enable Auto Fight",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+        local npc = NPCFolder:FindFirstChild(NPCDropdown.CurrentOption[1])
+        if Value == true then
+            while wait() do
+                for i, v in pairs(NPCFolder:GetChildren()) do
+                    if v.Name == npc.Name then
+                        local start = 0
+                        repeat
+                        PlayerCharacter.Humanoid:MoveTo(v.HumanoidRootPart.Position)
+                        if (v.HumanoidRootPart.Position - PlayerCharacter.HumanoidRootPart.Position).Magnitude <= MagnitudeSlider.CurrentValue then
+                            PlayerCharacter.Humanoid:MoveTo(PlayerCharacter.HumanoidRootPart.Position)
+                        end
+                        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool"):Activate()
+                        wait(.1)
+                        start += 1
+                        until v.Parent == nil or CurrentValue == false or start >= 50
+                        if CurrentValue == false then
+                            break
+                        end
+                    end
+                end
+                if CurrentValue == false then
+                    break
+                end
+            end
+        end
+   end,
+})
+local DeleteButton = FightingTab:CreateButton({
+   Name = "Delete UI",
+   Callback = function()
+        Rayfield:Destroy()
+   end,
+})
+
+local TeleportTab = Window:CreateTab("TP")
+local TeleportSection = TeleportTab:CreateSection("Teleport")
+
+local TPDropdown = TeleportTab:CreateDropdown({
+   Name = "Teleport to an area",
+   Options = TPTable,
+   CurrentOption = {"Desert"},
+   MultipleOptions = false,
+   Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Option)
+        local TeleportParts = game.Workspace:FindFirstChild("interactions"):FindFirstChild("teleports")
+        PlayerCharacter.HumanoidRootPart.CFrame = TeleportParts:FindFirstChild(Option[1]).CFrame
+   end,
+})
+
+local PetTab = Window:CreateTab("Pets/Eggs")
+local PetSection = PetTab:CreateSection("Pets")
+
+local EquipButton = PetTab:CreateButton({
+   Name = "Equip All (Have Inventory Open)",
+   Callback = function()
+        for i, v in pairs(game.Players.LocalPlayer.PlayerGui["1"]["1"]["3"]["5"]:GetChildren()) do
+            local args = {
+            [1] = {
+                [1] = {
+                    ["enabled"] = true,
+                    ["guid"] = v.Name
+                }
+            },
+            [2] = false
+            }
+
+            game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("pets/equipPets"):FireServer(unpack(args))
+        end
+   end,
+})
+
+local SettingsSection = PetTab:CreateSection("Settings")
+
+local EggDropdown = PetTab:CreateDropdown({
+   Name = "Choose an egg",
+   Options = EggsTable,
+   CurrentOption = {"None"},
+   MultipleOptions = false,
+   Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Option)
+        --EggDropdown.CurrentOption[1] = Option
+   end,
+})
+local VoidToggle = PetTab:CreateToggle({
+   Name = "Void",
+   CurrentValue = false,
+   Flag = "Toggle2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+   end,
+})
+
+local HatchSection = PetTab:CreateSection("Hatch")
+local HatchToggle = PetTab:CreateToggle({
+   Name = "Hatch",
+   CurrentValue = false,
+   Flag = "Toggle4", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+        if EggDropdown.CurrentOption ~= "None" and Value == true then
+            local args = {
+                [1] = "AD069FB5-4D50-47EF-86B9-6BF1E584307E",
+                [2] = {
+                    [1] = 3,
+                    [2] = EggDropdown.CurrentOption[1],
+                    [3] = VoidToggle.CurrentValue
+                }
+            }
+
+            repeat game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("eggs/hatchEgg"):FireServer(unpack(args)) wait() until CurrentValue == false
+        end
+   end,
+})
+
+local MiscTab = Window:CreateTab("Misc")
+local MiscSection = MiscTab:CreateSection("Miscellanious")
+
+local WalkspeedSlider = MiscTab:CreateSlider({
+   Name = "Walkspeed",
+   Range = {0, 300},
+   Increment = 5,
+   Suffix = "Walkspeed",
+   CurrentValue = 10,
+   Flag = "Slider2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+   PlayerCharacter.Humanoid.WalkSpeed = Value
+   end,
+})
