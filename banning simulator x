@@ -1,9 +1,12 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local PlayerCharacter = game.Players.LocalPlayer.Character
+local Player = game.Players.LocalPlayer
 local NPCFolder = game.Workspace:FindFirstChild("npcs")
 local EggsFolder = game.Workspace:FindFirstChild("interactions"):FindFirstChild("eggs")
 local TPPartsFolder = game.Workspace:FindFirstChild("interactions"):FindFirstChild("teleports")
+
+local hatching = false
 
 local NPCTABLE = {"Ice Golem", "Pufferfish King", "Pastel Guardian"}
 for i, v in pairs(NPCFolder:GetChildren()) do
@@ -28,10 +31,27 @@ end
 
 table.sort(NPCTABLE)
 
+local function nearestNPC(npcname)
+    local Nearest = nil
+    local Distance = nil
+
+    for i, v in pairs(NPCFolder:GetChildren()) do
+        if v:FindFirstChild("HumanoidRootPart") and v.Name == npcname then
+            local npcHRP = v:FindFirstChild("HumanoidRootPart")
+            local DistanceX = Player:DistanceFromCharacter(npcHRP.Position)
+            if Distance == nil or DistanceX < Distance then
+                Distance = DistanceX
+                Nearest = v
+            end
+        end
+    end
+    return Nearest
+end
+
 local Window = Rayfield:CreateWindow({
    Name = "Monkey Hub",
-   LoadingTitle = "Monkey Niggers Incorporated",
-   LoadingSubtitle = "by Monkey Squad",
+   LoadingTitle = "squidsy incorportated",
+   LoadingSubtitle = "by kevin",
    ConfigurationSaving = {
       Enabled = false,
       FolderName = nil, -- Create a custom folder for your hub/game
@@ -81,6 +101,18 @@ local MagnitudeSlider = FightingTab:CreateSlider({
    end,
 })
 
+local TimeSlider = FightingTab:CreateSlider({
+   Name = "Time Until Next NPC",
+   Range = {0, 30},
+   Increment = 1,
+   Suffix = "Seconds",
+   CurrentValue = 10,
+   Flag = "Slider2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+   end,
+})
+
 local FightingToggle = FightingTab:CreateToggle({
    Name = "Enable Auto Fight",
    CurrentValue = false,
@@ -94,14 +126,13 @@ local FightingToggle = FightingTab:CreateToggle({
                     if v.Name == npc.Name then
                         local start = 0
                         repeat
-                        PlayerCharacter.Humanoid:MoveTo(v.HumanoidRootPart.Position)
-                        if (v.HumanoidRootPart.Position - PlayerCharacter.HumanoidRootPart.Position).Magnitude <= MagnitudeSlider.CurrentValue then
-                            PlayerCharacter.Humanoid:MoveTo(PlayerCharacter.HumanoidRootPart.Position)
+                        if hatching == false then
+                            PlayerCharacter.HumanoidRootPart.CFrame = nearestNPC(npc.Name).HumanoidRootPart.CFrame
                         end
                         game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool"):Activate()
                         wait(.1)
                         start += 1
-                        until v.Parent == nil or CurrentValue == false or start >= 50
+                        until CurrentValue == false or start >= TimeSlider.CurrentValue * 10
                         if CurrentValue == false then
                             break
                         end
@@ -179,6 +210,15 @@ local VoidToggle = PetTab:CreateToggle({
    end,
 })
 
+local TripleToggle = PetTab:CreateToggle({
+   Name = "Triple",
+   CurrentValue = false,
+   Flag = "Toggle3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        CurrentValue = Value
+   end,
+})
+
 local HatchSection = PetTab:CreateSection("Hatch")
 local HatchToggle = PetTab:CreateToggle({
    Name = "Hatch",
@@ -190,13 +230,28 @@ local HatchToggle = PetTab:CreateToggle({
             local args = {
                 [1] = "AD069FB5-4D50-47EF-86B9-6BF1E584307E",
                 [2] = {
-                    [1] = 3,
+                    [1] = 1,
                     [2] = EggDropdown.CurrentOption[1],
                     [3] = VoidToggle.CurrentValue
                 }
             }
 
-            repeat game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("eggs/hatchEgg"):FireServer(unpack(args)) wait() until CurrentValue == false
+            if TripleToggle.CurrentValue == true then
+                args[2][1] = 3
+            end
+
+            local hatchPos = PlayerCharacter.HumanoidRootPart.CFrame
+            local npc = NPCFolder:FindFirstChild(NPCDropdown.CurrentOption[1])
+            repeat
+                hatching = true
+                wait(.1)
+                PlayerCharacter.HumanoidRootPart.CFrame = hatchPos
+                wait(.2)
+                game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("eggs/hatchEgg"):FireServer(unpack(args))
+                wait()
+                hatching = false
+                wait(2.7)
+            until CurrentValue == false
         end
    end,
 })
@@ -210,8 +265,10 @@ local WalkspeedSlider = MiscTab:CreateSlider({
    Increment = 5,
    Suffix = "Walkspeed",
    CurrentValue = 10,
-   Flag = "Slider2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Flag = "Slider3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
    PlayerCharacter.Humanoid.WalkSpeed = Value
    end,
 })
+
+--loadstring(game:HttpGet(('https://raw.githubusercontent.com/RTrade/Voidz/main/AntiAFK.lua'),true))()
